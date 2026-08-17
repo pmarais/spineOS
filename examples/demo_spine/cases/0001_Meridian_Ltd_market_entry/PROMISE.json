@@ -1,0 +1,28 @@
+{
+  "client": "Meridian Ltd",
+  "type": "consulting",
+  "scope": "Market-entry study, Kenya: regulatory map, competitor scan, entry-mode recommendation",
+  "deadline": "2026-09-18",
+  "currency": "ZAR",
+  "accepted_on": "2026-08-04",
+  "total": 180000.0,
+  "milestones": [
+    {
+      "label": "deposit",
+      "amount": 60000.0,
+      "status": "paid"
+    },
+    {
+      "label": "draft",
+      "amount": 80000.0,
+      "status": "outstanding"
+    },
+    {
+      "label": "final",
+      "amount": 40000.0,
+      "status": "outstanding"
+    }
+  ],
+  "exceptions": [],
+  "case": "0001_Meridian_Ltd_market_entry"
+}

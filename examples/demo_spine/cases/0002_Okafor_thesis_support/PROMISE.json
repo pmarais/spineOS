@@ -1,0 +1,28 @@
+{
+  "client": "Dr E Okafor",
+  "type": "thesis",
+  "scope": "Results chapter + discussion + formatting to institutional template",
+  "deadline": "2026-10-30",
+  "currency": "ZAR",
+  "accepted_on": "2026-07-28",
+  "total": 52000.0,
+  "milestones": [
+    {
+      "label": "deposit",
+      "amount": 20000.0,
+      "status": "paid"
+    },
+    {
+      "label": "delivery",
+      "amount": 22000.0,
+      "status": "paid"
+    },
+    {
+      "label": "final",
+      "amount": 10000.0,
+      "status": "outstanding"
+    }
+  ],
+  "exceptions": [],
+  "case": "0002_Okafor_thesis_support"
+}
