@@ -62,7 +62,8 @@ Three realistic cases: an engagement in progress, a message staged at a gate awa
 | [`examples/demo_spine/`](examples/demo_spine) | A fully worked spine to learn from |
 | [`routers/`](routers) | Your task-specific processes (the Prime Rule: use the registered process, never invent one) |
 | [`modules/docs-node/`](modules/docs-node) | Document skills: DOCX · PPTX · XLSX (Node 22, pinned) |
-| [`tests/`](tests) | 12 golden tests incl. two-clone convergence with zero loss: `python3 tests/test_spine.py` |
+| [`server/`](server) | Self-host kit: append-only git server, member identities, path RBAC, daily bundles — any Linux box with git + ssh |
+| [`tests/`](tests) | 19 golden tests: fold semantics, two-clone zero-loss convergence, manual reconcile, journal recovery, server RBAC incl. privilege-escalation refusal |
 | [`BLUEPRINT.md`](BLUEPRINT.md) | The roadmap: SQLite backend, conformance levels, adapters |
 
 ## The five primitives

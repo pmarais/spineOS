@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+"""SpineOS server update hook — branch ownership + path RBAC on a bare git repo.
+
+Called by git per pushed ref: update <refname> <old-sha> <new-sha>.
+Identity arrives in $SPINE_MEMBER, set by server/bin/spine-shell (the forced
+command bound to each member's SSH key). No identity → push refused.
+
+Rules enforced here (see docs/architecture-v03.md §6):
+  - refs/heads/member/<name>  : only that member (admins may push any, for recovery)
+  - refs/heads/main           : only role=admin (the MANUAL reconcile); bootstrap
+                                exception: the very first push to main is allowed
+  - refs/tags/snap/*          : any member (snapshots); other tags admin-only
+  - anything else             : refused (spines keep a clean namespace)
+  - deletions and non-fast-forwards: refused (history only grows; the repo's
+    receive.denyDeletes/denyNonFastForwards are the belt, this is the braces)
+  - path RBAC: a push may only touch paths the member's role owns (ROLES.json,
+    read from the ACCEPTED main branch — never from the incoming push)
+
+Roles file (ROLES.json at the spine root, admin-owned, itself path-protected):
+  {"roles": {"admin": {"paths": ["**"]},
+             "business-manager": {"paths": ["cases/**", "routers/**", "policies/**"]},
+             "member": {"paths": ["cases/**"]}},
+   "members": {"philip": "admin", "sam": "member"}}
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+
+ZERO = "0" * 40
+
+
+def deny(msg):
+    print(f"spine-server: REFUSED — {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def git(*args):
+    return subprocess.run(["git", *args], capture_output=True, text=True)
+
+
+def load_roles():
+    """Roles come from the ACCEPTED main branch only — an incoming push can never
+    grant itself permissions. Returns None when main/ROLES.json does not exist yet
+    (bootstrap window)."""
+    r = git("show", "main:ROLES.json")
+    if r.returncode != 0:
+        return None
+    try:
+        return json.loads(r.stdout)
+    except json.JSONDecodeError:
+        deny("ROLES.json on main is invalid JSON — an admin must fix it")
+
+
+def glob_match(pattern, path):
+    """fnmatch with '**' (any depth) and '*' (single segment)."""
+    out = []
+    i = 0
+    while i < len(pattern):
+        if pattern.startswith("**", i):
+            out.append(".*")
+            i += 2
+            if i < len(pattern) and pattern[i] == "/":
+                i += 1  # '**/'
+        elif pattern[i] == "*":
+            out.append("[^/]*")
+            i += 1
+        else:
+            out.append(re.escape(pattern[i]))
+            i += 1
+    return re.fullmatch("".join(out), path) is not None
+
+
+def role_of(roles, member):
+    return (roles.get("members") or {}).get(member)
+
+
+def allowed_paths(roles, member):
+    role = role_of(roles, member)
+    if role is None:
+        return None
+    return (roles.get("roles", {}).get(role) or {}).get("paths", [])
+
+
+def main():
+    refname, old, new = sys.argv[1:4]
+    member = os.environ.get("SPINE_MEMBER", "").strip()
+    if not member:
+        deny("no member identity (key not installed via add-member.sh?)")
+    if new == ZERO:
+        deny("deletions are never allowed — history only grows")
+    if old != ZERO:
+        # non-fast-forward: old must be an ancestor of new
+        anc = git("merge-base", "--is-ancestor", old, new)
+        if anc.returncode != 0:
+            deny("non-fast-forward — the spine's history is append-only")
+
+    roles = load_roles()
+    is_admin = bool(roles) and role_of(roles, member) == "admin"
+
+    # --- ref namespace rules -------------------------------------------------
+    if refname.startswith("refs/tags/"):
+        if refname.startswith("refs/tags/snap/") or is_admin:
+            sys.exit(0)
+        deny(f"only snap/* tags may be pushed by members (got {refname})")
+    m = re.fullmatch(r"refs/heads/member/([A-Za-z0-9_.-]+)", refname)
+    if m:
+        if m.group(1) != member and not is_admin:
+            deny(f"'{member}' may not push {refname} — members push only their own branch")
+    elif refname == "refs/heads/main":
+        if roles is None:
+            print("spine-server: BOOTSTRAP — first push to main accepted; "
+                  "it must contain ROLES.json, which governs from now on", file=sys.stderr)
+            sys.exit(0)
+        if not is_admin:
+            deny(f"'{member}' may not push main — main is advanced by an admin's manual reconcile")
+        sys.exit(0)  # admin reconcile: no path RBAC on the merge result
+    else:
+        deny(f"unknown ref {refname} — spines allow main, member/<name>, and snap/* tags")
+
+    # --- path RBAC on member branches ---------------------------------------
+    if roles is None:
+        sys.exit(0)  # bootstrap window: nothing to enforce against yet
+    if is_admin:
+        sys.exit(0)
+    pats = allowed_paths(roles, member)
+    if pats is None:
+        deny(f"'{member}' is not in ROLES.json — an admin must add them")
+    base = old
+    if old == ZERO:  # new branch: diff against main if it exists, else full tree
+        base = "main" if git("rev-parse", "--verify", "main").returncode == 0 else None
+    if base:
+        r = git("diff", "--name-only", f"{base}..{new}")
+        touched = [p for p in r.stdout.splitlines() if p.strip()]
+    else:
+        r = git("ls-tree", "-r", "--name-only", new)
+        touched = [p for p in r.stdout.splitlines() if p.strip()]
+    violations = [p for p in touched if not any(glob_match(pat, p) for pat in pats)]
+    if violations:
+        deny(f"role '{role_of(roles, member)}' may not touch: "
+             + ", ".join(violations[:8])
+             + (f" (+{len(violations)-8} more)" if len(violations) > 8 else ""))
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,6 +1,6 @@
 # Architecture v0.3 — modules, research dogma, roles, and the self-hosted server
 
-*Status: design for review. Builds on [sync-design.md](sync-design.md) (v0.2). Order of construction is at the end; nothing here is built yet.*
+*Status: §6–§7 BUILT 2026-08-17 (see [server/](../server/README.md); reconcile manual by decision). §1 partially built (doctor --env). §2 ingest, §4 research dogma, §5 policies scaffold: designed, not yet built.*
 
 The target deployment stays deliberately small: **one box with git and ssh is the entire server requirement.** Everything below runs on a bare git instance plus hooks and cron. No database server, no queue, no web app on the critical path. Any subscription agent CLI (Claude Code, Grok CLI, Copilot CLI, Codex) is a full client, because the interfaces are files, a CLI and AGENTS.md.
 

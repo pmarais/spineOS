@@ -1,0 +1,12 @@
+#!/bin/sh
+# SpineOS member shell — the forced command bound to each member's SSH key.
+# Usage in authorized_keys (written by add-member.sh):
+#   command="/home/spine/bin/spine-shell <name>",no-pty,... ssh-ed25519 AAAA...
+# It stamps the member identity into the environment (read by hooks/update)
+# and then serves git, and only git.
+set -eu
+[ -n "${1:-}" ] || { echo "spine-shell: no member name bound to this key" >&2; exit 1; }
+[ -n "${SSH_ORIGINAL_COMMAND:-}" ] || { echo "spine-shell: interactive login is disabled; this key serves git only" >&2; exit 1; }
+SPINE_MEMBER="$1"
+export SPINE_MEMBER
+exec git-shell -c "$SSH_ORIGINAL_COMMAND"

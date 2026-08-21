@@ -1,0 +1,15 @@
+{
+  "_comment": "Copy to ROLES.json at the SPINE ROOT (not server/), edit, and push. Governs from the first push to main. Paths use ** (any depth) and * (one segment). ROLES.json itself should be admin-only, which the admin '**' + others' narrower globs already guarantee.",
+  "roles": {
+    "admin":            { "paths": ["**"] },
+    "it-admin":         { "paths": ["modules/**", "server/**", ".nvmrc", ".python-version", ".gitattributes", ".spineos.json"] },
+    "business-manager": { "paths": ["cases/**", "routers/**", "policies/**"] },
+    "member":           { "paths": ["cases/**"] }
+  },
+  "members": {
+    "alice": "admin",
+    "bob":   "business-manager",
+    "carol": "member",
+    "agent-carol": "member"
+  }
+}
