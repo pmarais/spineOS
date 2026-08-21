@@ -1,0 +1,11 @@
+{
+  "name": "spineos-docs-node",
+  "private": true,
+  "description": "SpineOS document skills: DOCX, PPTX, XLSX as governed projections of source files",
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "docx": "9.5.1",
+    "pptxgenjs": "4.0.1",
+    "exceljs": "4.4.0"
+  }
+}

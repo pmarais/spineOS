@@ -11,6 +11,8 @@ Run the boot sequence NOW and read its output in full:
 python3 spine.py seed
 ```
 
+If the output contains a **[FIRST RUN]** block, this spine is not set up yet: interview the operator exactly as that block instructs — one question at a time (name → attribution, what a case is for them, team/branch mode, optional private remote, first real case) — and complete the setup before anything else.
+
 Then:
 
 1. **Follow SPINE.md exactly as printed** — it is the operating system for this repo. Its Prime Rule, gates, and reporting format bind you for the whole session.

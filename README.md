@@ -9,14 +9,17 @@ Durable, append-only operational state for humans and AI agents working together
 - **Gated.** Irreversible actions (send, pay, publish, delete) wait for a recorded, single-use authorisation.
 - **Attributed.** Every write carries an author; owner and author are distinct.
 
-## Quickstart (60 seconds)
+## Install (2 minutes, no API keys)
 
 ```bash
-git clone <this-repo> myspine && cd myspine
-export SPINE_OPERATOR=yourname
+git clone https://github.com/pmarais/spineOS myspine && cd myspine
 ```
 
-Open Claude Code (or your agent CLI) in the folder and say **"seed"**. The agent boots from the spine — rules, case index, ranked worklist — and waits for your instruction. Full walkthrough: [docs/quickstart.md](docs/quickstart.md).
+**Open the folder in your agent CLI** — Claude Code, Grok CLI, Copilot CLI, Codex or Cursor — and make your first command:
+
+> **`/seed`**  (Claude Code) · or just say **"seed"** in any other CLI
+
+The agent boots from the spine and, on a fresh clone, **sets you up in conversation**: your name (for attribution), what a "case" is in your world (clients? matters? projects?), an optional private remote for durability, and your first real case. From then on every session starts with `seed` and runs `worklist → case → append → sitrep`. Per-CLI guides: [docs/adoption/](docs/adoption/README.md). Full walkthrough: [docs/quickstart.md](docs/quickstart.md).
 
 Prefer the raw CLI?
 
@@ -30,7 +33,14 @@ python3 spine.py show 1               # fold: the case's current position
 python3 spine.py worklist             # every open case, ranked P1/P2/P3
 python3 spine.py doctor               # drift detection
 python3 spine.py sitrep 1             # the operator report skeleton
+python3 spine.py sync                 # commit ONLY this session's files, merge (never rebase), push
+python3 spine.py snapshot delivery-1  # pin the current state as a tag
 ```
+
+**Multi-agent, multi-machine, zero loss:** ledgers are append-only and union-merged (conflicts are
+impossible by construction), every write is journaled locally before it lands (`recover` replays),
+sync commits only the files your session touched, and teams can run per-member branches with a
+manual admin `reconcile`. The design and its production scar tissue: [docs/sync-design.md](docs/sync-design.md).
 
 ## Try the worked example
 
@@ -48,10 +58,11 @@ Three realistic cases: an engagement in progress, a message staged at a gate awa
 | [`SPINE.md`](SPINE.md) | The starter rulebook: boot checklist, gates, SITREP protocol, 10 invariants each carrying the incident that created it |
 | [`.claude/skills/`](.claude/skills) | Claude Code skills: `/seed`, `/case`, `/sitrep` |
 | [`AGENTS.md`](AGENTS.md) | Operating instructions for any agent CLI (CLAUDE.md and GROK.md point here) |
-| [`docs/`](docs) | [Quickstart](docs/quickstart.md) · [Concepts](docs/concepts.md) · [Example workflows](docs/workflows.md) |
+| [`docs/`](docs) | [Quickstart](docs/quickstart.md) · [Concepts](docs/concepts.md) · [Adoption per CLI](docs/adoption/README.md) · [Sync design](docs/sync-design.md) · [Architecture](docs/architecture-v03.md) |
 | [`examples/demo_spine/`](examples/demo_spine) | A fully worked spine to learn from |
 | [`routers/`](routers) | Your task-specific processes (the Prime Rule: use the registered process, never invent one) |
-| [`tests/`](tests) | Golden tests for the fold semantics and CLI: `python3 tests/test_spine.py` |
+| [`modules/docs-node/`](modules/docs-node) | Document skills: DOCX · PPTX · XLSX (Node 22, pinned) |
+| [`tests/`](tests) | 12 golden tests incl. two-clone convergence with zero loss: `python3 tests/test_spine.py` |
 | [`BLUEPRINT.md`](BLUEPRINT.md) | The roadmap: SQLite backend, conformance levels, adapters |
 
 ## The five primitives

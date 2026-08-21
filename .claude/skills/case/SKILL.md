@@ -32,7 +32,9 @@ description: Work one case on the spine. Use for "what's going on with X", "work
      --action <CODE> --note "<what happened, what was decided, what it means>"
    ```
 
-5. **Report** in SITREP format (see the sitrep skill). Never report in free-form prose.
+5. **Share**: `python3 spine.py sync` — commits only this session's files, merges, pushes.
+
+6. **Report** in SITREP format (see the sitrep skill). Never report in free-form prose.
 
 ## Rules that bind here
 

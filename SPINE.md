@@ -11,9 +11,10 @@
 Every session starts here. You wake with no memory of prior sessions; the spine remembers for you.
 
 ```
-[ ] 1. python3 spine.py seed          # prints this file + case index + ranked worklist
+[ ] 1. python3 spine.py seed          # sync-in + this file + case index + ranked worklist
 [ ] 2. If working one case:  python3 spine.py show <case>
 [ ] 3. Take the next action from the operator or the worklist — never from memory.
+[ ] 4. Session end: python3 spine.py sync   # commits ONLY what this session touched, merges, pushes
 ```
 
 **The context preservation rule:** if a finding, decision or client fact exists only in the conversation, it does not exist. Before the session ends, append it: `python3 spine.py append <case> --note "..."`.
@@ -28,7 +29,7 @@ A case is in exactly one stage. `agreed` requires a PROMISE.json (the deal snaps
 
 | File | Rule |
 |---|---|
-| `PROMISE.json` | Written at acceptance. Rewritten ONLY when the deal itself changes, via `spine.py promise --force` (the change is ledgered old → new) |
+| PROMISE | An EVENT on the ledger, written at acceptance via `spine.py promise`; changed ONLY when the deal itself changes (`--force`, ledgered old → new). `PROMISE.json` is a rendered projection |
 | `LEDGER.jsonl` | **Append only. Never edit or delete a line.** A mistake is corrected by appending a newer line. Current state = latest non-null value per field (the fold) |
 | `LOG.csv` | Append only. One row per action taken. `spine.py append` writes it together with the ledger — never write one without the other |
 
@@ -83,6 +84,15 @@ Every entry here exists because something went wrong once. When something goes w
 8. **Third-party work is evidence, not input.** Reproduce it, never transcribe it; what will not reconcile is a finding, not an inconvenience. *(Origin: a supplied dataset had silently lost every severe-category record; the reproduction caught it, transcription would not have.)*
 9. **Bound every wait.** A watchdog with no wall-clock bound can hold a shared resource forever. Anything that waits needs both a per-step timeout and a total one. *(Origin: a 38-minute hang on 1.9 seconds of CPU, blocking every other agent.)*
 10. **Append, never edit.** In every store: corrections are new entries. History is how you find out what actually happened. *(Origin: every dispute the firm has resolved was resolved from an unedited trail.)*
+
+## 8b. Sync (multi-agent, multi-machine)
+
+`spine.py sync` shares work safely: it commits ONLY the files this session touched, merges (never
+rebases, never stashes), and pushes with retries. Ledgers cannot conflict (append-only, union-merged,
+deduplicated by id); a conflict in prose files stops loudly for a human. Every write is journaled
+locally before it touches a ledger (`spine.py recover` replays). Teams on per-member branches push
+`member/<name>` and pull `main`; an ADMIN advances `main` MANUALLY with `spine.py reconcile`.
+Never: `reset --hard`, `git clean`, `checkout --` on spine state, `stash drop`, force-push.
 
 ## 9. Routers
 

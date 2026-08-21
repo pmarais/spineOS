@@ -88,7 +88,7 @@ refs/heads/member/<name>       ← each member (human or agent identity) pushes 
 ```
 
 - **Push rights enforced server-side** (git `update` hook): a key may push only to its own `member/<name>` ref. Main is untouchable by clients; force-push and deletion refused repo-wide (append-only remote, sync-design §7).
-- **The reconciler** (server cron, every minute, or a post-receive hook): octopus-merges all member branches into `main` — unions cannot conflict; a prose conflict parks THAT file's integration and flags doctor, touching nothing else. Members' `spine sync` pulls `main`, so everyone reads the reconciled whole within a minute of any push. **Functionally this is the shared branch — same one-truth, same worklist — with attribution, isolation of the unreviewed instant, and enforceable permissions added.** The double-act risk returns only in the sub-minute window, which the same-case awareness note (sync-design §10.2) covers.
+- **The reconciler** (DECIDED 2026-08-17: **MANUAL** — an admin runs `spine reconcile`; cron/hook automation is a later opt-in): octopus-merges all member branches into `main` — unions cannot conflict; a prose conflict parks THAT file's integration and flags doctor, touching nothing else. Members' `spine sync` pulls `main`, so everyone reads the reconciled whole after each admin reconcile. **Functionally this is the shared branch — same one-truth, same worklist — with attribution, isolation of the unreviewed instant, and enforceable permissions added.** The double-act risk returns only in the sub-minute window, which the same-case awareness note (sync-design §10.2) covers.
 - **Path-level RBAC in the same update hook**: a push is rejected if the diff touches paths the member's role does not own. This is real enforcement on a bare git box — no platform, no web app.
 
 **The roles** (stored in `ROLES.json`, admin-owned, itself path-protected):
@@ -110,7 +110,7 @@ Target: any Linux box (a R100/month VPS) or an on-prem machine. The kit installs
 1. A `git` user with `git-shell` (serves git, nothing else), per-member authorized keys with forced command.
 2. The bare spine repo with `receive.denyNonFastForwards` + `denyDeletes`.
 3. The `update` hook: branch ownership + path RBAC (§6).
-4. The reconciler cron (§6) and the daily `git bundle` snapshot rotation (sync-design §7).
+4. The daily `git bundle` snapshot rotation (sync-design §7). Reconciliation stays a manual admin verb (§6).
 5. Optional ingest crons (§2) if the box also runs collectors.
 
 This is the same pattern our production firm runs today (own git server, JNB, data-resident) — proven, boring, and sovereign: the enterprise data-residency story is "your spine on your box in your jurisdiction", and this kit is that story as a script.

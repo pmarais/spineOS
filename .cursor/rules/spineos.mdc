@@ -1,0 +1,10 @@
+---
+description: SpineOS spine — operating contract for agents working in this repository
+alwaysApply: true
+---
+
+This repository is a SpineOS spine. Read AGENTS.md and follow it exactly. Boot every session with
+`python3 spine.py seed`; obey SPINE.md as printed. Load one case before acting on it; append after
+every substantive step; never edit ledger or log history; irreversible actions (send, pay, publish,
+delete) require the operator's recorded, single-use authorisation; report only in SITREP format;
+share work with `python3 spine.py sync` (commits only files this session touched).
