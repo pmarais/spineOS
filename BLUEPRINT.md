@@ -1,3 +1,7 @@
+# SpineOS blueprint
+
+> **Design docs:** [docs/sync-design.md](docs/sync-design.md) (v0.2: multi-agent git pipeline) · [docs/architecture-v03.md](docs/architecture-v03.md) (v0.3: ingest modules, document skills, research dogma, roles/branches, server kit).
+
 # SpineOS — open-source repo concept (NOT built — blueprint only)
 
 Target: `github.com/<org>/spineos` (org TBD; `spine-os` fallback). Licence: Apache-2.0. Language: Python 3.12+ stdlib-only core (sqlite3 built in, zero hard dependencies — the install story is `pipx install spineos`). TypeScript adapter package later, not at launch.
