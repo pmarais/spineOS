@@ -1,0 +1,4 @@
+{
+  "_comment": "chat partner NAME -> case number (names, not numbers: some chats use @lid JIDs that contain no phone number).",
+  "chats": { "Dr E Okafor": "0002" }
+}

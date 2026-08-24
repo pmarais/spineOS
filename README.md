@@ -61,9 +61,13 @@ Three realistic cases: an engagement in progress, a message staged at a gate awa
 | [`docs/`](docs) | [Quickstart](docs/quickstart.md) · [Concepts](docs/concepts.md) · [Adoption per CLI](docs/adoption/README.md) · [Sync design](docs/sync-design.md) · [Architecture](docs/architecture-v03.md) |
 | [`examples/demo_spine/`](examples/demo_spine) | A fully worked spine to learn from |
 | [`routers/`](routers) | Your task-specific processes (the Prime Rule: use the registered process, never invent one) |
+| [`modules/email-imap/`](modules/email-imap) | IMAP ingest: full bodies, union, multi-address routing to cases, loud unrouted log |
+| [`modules/api/`](modules/api) | External feeds as append-only facts (feeds are facts; messages are claims) |
+| [`modules/whatsapp-local/`](modules/whatsapp-local) | Local WhatsApp ingest (macOS, read-only, WAL-safe snapshots, union) |
+| [`modules/research/`](modules/research) | The numbers ledger: every published quantity computed, recorded, re-derivable |
 | [`modules/docs-node/`](modules/docs-node) | Document skills: DOCX · PPTX · XLSX (Node 22, pinned) |
 | [`server/`](server) | Self-host kit: append-only git server, member identities, path RBAC, daily bundles — any Linux box with git + ssh |
-| [`tests/`](tests) | 19 golden tests: fold semantics, two-clone zero-loss convergence, manual reconcile, journal recovery, server RBAC incl. privilege-escalation refusal |
+| [`tests/`](tests) | 24 golden tests: fold semantics, two-clone zero-loss convergence, manual reconcile, journal recovery, server RBAC, module contracts (full-body, union, dedupe, numbers gate) |
 | [`BLUEPRINT.md`](BLUEPRINT.md) | The roadmap: SQLite backend, conformance levels, adapters |
 
 ## The five primitives

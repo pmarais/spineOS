@@ -1,0 +1,12 @@
+{
+  "accounts": [
+    {
+      "name": "main",
+      "host": "mail.privateemail.com",
+      "port": 993,
+      "user": "you@yourfirm.com",
+      "password_env": "SPINE_IMAP_MAIN",
+      "mailboxes": ["INBOX", "Sent"]
+    }
+  ]
+}

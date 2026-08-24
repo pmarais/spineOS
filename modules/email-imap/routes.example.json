@@ -1,0 +1,8 @@
+{
+  "_comment": "address (lowercase) -> case number. A case may have MANY addresses; add every address a client writes from, including the second one they never told you about.",
+  "addresses": {
+    "client@example.com": "0001",
+    "client.work@example.org": "0001",
+    "other@example.com": "0002"
+  }
+}

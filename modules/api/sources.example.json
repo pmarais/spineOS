@@ -1,0 +1,17 @@
+{
+  "_comment": "Each source declares what it is AUTHORITATIVE FOR. Feeds are facts; messages are claims: a payment 'exists' when the bank feed shows it, a price when the market feed shows it — never when a screenshot says so. auth_env names an environment variable holding a bearer token; credentials never live in the repo.",
+  "sources": [
+    {
+      "name": "bank-feed",
+      "url": "https://api.yourbank.example/v1/transactions",
+      "auth_env": "SPINE_API_BANK",
+      "headers": { "Accept": "application/json" },
+      "authoritative_for": "payments: a client payment is confirmed when the credit appears here as POSTED"
+    },
+    {
+      "name": "fx-rates",
+      "url": "https://api.frankfurter.dev/v1/latest?base=USD",
+      "authoritative_for": "exchange rates used in any quote or report"
+    }
+  ]
+}
