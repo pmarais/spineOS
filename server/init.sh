@@ -42,7 +42,9 @@ echo "✓ update hook installed (branch ownership + path RBAC; roles read from m
 # 5. daily bundle backups (03:10, keep 14) — backups are automated; RECONCILE IS NOT
 install -m 755 "$KIT_DIR/bundle.sh" "$HOME_DIR/bin/spine-bundle"
 CRON_LINE="10 3 * * * $HOME_DIR/bin/spine-bundle $BARE $HOME_DIR/backups"
-( crontab -u spine -l 2>/dev/null | grep -vF "spine-bundle" ; echo "$CRON_LINE" ) | crontab -u spine -
+# an EMPTY existing crontab must not abort the script (set -e + pipefail): collect defensively
+EXISTING="$(crontab -u spine -l 2>/dev/null || true)"
+{ printf '%s\n' "$EXISTING" | grep -vF "spine-bundle" || true; echo "$CRON_LINE"; } | crontab -u spine -
 echo "✓ daily bundle cron installed"
 
 chown -R spine:spine "$HOME_DIR"
