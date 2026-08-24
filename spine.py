@@ -361,11 +361,17 @@ def do_sync(root: Path, message=None, also=(), push=True, light=False, quiet=Fal
             others = [p.name for p in (spine_dir(root) / "sessions").glob("*.manifest")]
             if others:
                 say(f"note: other sessions have unsynced manifests: {', '.join(others)}")
-            unclaimed = [l for l in git(root, "status", "--porcelain").stdout.splitlines()
-                         if l and not l.startswith("??")]
-            if unclaimed:
-                say(f"note: {len(unclaimed)} unclaimed modified file(s) left untouched "
-                    f"(claim with: spine.py sync --also <path>)")
+            status = [l for l in git(root, "status", "--porcelain").stdout.splitlines() if l]
+            modified = [l[3:] for l in status if not l.startswith("??")]
+            untracked = [l[3:] for l in status if l.startswith("??")]
+            if modified:
+                say(f"note: {len(modified)} unclaimed MODIFIED file(s) left untouched "
+                    f"(claim with: spine.py sync --also <path>): " + ", ".join(modified[:6])
+                    + (" …" if len(modified) > 6 else ""))
+            if untracked:
+                say(f"note: {len(untracked)} UNTRACKED file(s) NOT shared — hand-made work is "
+                    f"invisible until claimed (spine.py sync --also <path>): " + ", ".join(untracked[:6])
+                    + (" …" if len(untracked) > 6 else ""))
         # 2. integrate
         if not has_origin(root):
             say("sync: no origin remote — committed locally only.")
@@ -391,19 +397,26 @@ def do_sync(root: Path, message=None, also=(), push=True, light=False, quiet=Fal
             return True
         ref = f"HEAD:refs/heads/member/{re.sub(r'[^A-Za-z0-9_.-]', '_', get_author(None, root))}" \
             if mode == "member" else f"HEAD:{current_branch(root)}"
+        last_err = ""
         for attempt in range(3):
             p = git(root, "push", "origin", ref)
             if p.returncode == 0:
                 (spine_dir(root) / "last_push").write_text(now_iso())
                 say(f"✓ pushed {ref}")
                 return True
+            last_err = p.stderr
+            if "REFUSED" in last_err:
+                break                     # a policy refusal will not heal on retry
             time.sleep(0.5 + random.random())
             git(root, "fetch", "origin")
             if mode != "member" and git(root, "rev-parse", f"origin/{target}").returncode == 0:
                 if git(root, "merge", "--no-edit", f"origin/{target}").returncode != 0:
                     git(root, "merge", "--abort")
                     die("sync: conflict during push retry — resolve with a human.", 2)
-        say("sync: push failed after retries — work is committed locally; retry later.")
+        say("sync: push failed — work is committed locally.")
+        for line in last_err.splitlines():
+            if "REFUSED" in line or "rejected" in line:
+                say("  server: " + line.replace("remote: ", "").strip())
         return False
 
 
