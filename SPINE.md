@@ -96,7 +96,7 @@ Never: `reset --hard`, `git clean`, `checkout --` on spine state, `stash drop`, 
 
 ## 9. Routers
 
-Task-specific processes live in `routers/` as plain markdown, one file per task type (e.g. `routers/onboarding.md`, `routers/delivery.md`). This file stays small; routers carry the detail. If a router and this file disagree: the router wins on mechanics, this file wins on sequence and gates.
+Task-specific processes live in `routers/` as plain markdown, one file per task type; formal policies live in `policies/` (read the relevant policy BEFORE acting in its area) (e.g. `routers/onboarding.md`, `routers/delivery.md`). This file stays small; routers carry the detail. If a router and this file disagree: the router wins on mechanics, this file wins on sequence and gates.
 
 ---
 
