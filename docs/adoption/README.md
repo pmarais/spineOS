@@ -19,6 +19,8 @@ From then on, every session starts with `seed` and ends with your findings appen
 > **Agent:** *(runs `python3 spine.py seed`, reads the rules, sees FIRST RUN)* This spine is not set
 > up yet. What is your name, for attribution? …And what do you run here: clients, matters, projects?
 > **You:** I'm Sam. Clients — I run a small consultancy.
+> **Agent:** *(runs `spine.py init --operator sam`: adopts the clone, completes the scaffold)* Do you have a private git remote for this spine yet? If so I will run `spine.py remote <url>`; if not, it works local-only until you do.
+> **You:** Not yet, local is fine.
 > **Agent:** *(sets SPINE_OPERATOR=sam, writes config)* Set up. Shall we open your first case — which
 > client is most on your mind today?
 > **You:** Acme. They accepted a 120k proposal yesterday, deposit of 40k is already in.

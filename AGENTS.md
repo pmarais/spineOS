@@ -31,6 +31,7 @@ python3 spine.py worklist            # all open cases ranked P1/P2/P3
 python3 spine.py doctor              # drift detection
 python3 spine.py sitrep <case>       # report skeleton
 python3 spine.py sync                # commit ONLY this session's files, merge (never rebase), push
+python3 spine.py remote <git-url>    # give the spine its own private remote (public repo stays 'upstream')
 python3 spine.py snapshot [label]    # pin current state as a tag (deliveries, handovers)
 python3 spine.py recover             # replay journaled lines missing from ledgers (idempotent)
 python3 spine.py reconcile           # ADMIN, MANUAL: merge member branches into main

@@ -29,7 +29,7 @@ Sync (design: docs/sync-design.md):
     pull main; an admin advances main MANUALLY with `spine.py reconcile`)
 
 Verbs: init · new · promise · append · show · fold · worklist · doctor ·
-       sitrep · seed · sync · reconcile · snapshot · recover
+       sitrep · seed · sync · remote · reconcile · snapshot · recover
 """
 
 import argparse
@@ -305,6 +305,21 @@ def has_origin(root: Path) -> bool:
     return has_git(root) and git(root, "remote", "get-url", "origin").returncode == 0
 
 
+UPSTREAM_MARKERS = ("github.com/pmarais/spineOS", "github.com:pmarais/spineOS")
+
+
+def origin_url(root: Path) -> str:
+    r = git(root, "remote", "get-url", "origin")
+    return r.stdout.strip() if r.returncode == 0 else ""
+
+
+def origin_is_upstream(root: Path) -> bool:
+    """True when 'origin' is the public SpineOS product repo: a fresh clone. You can pull
+    product updates from it, but your spine's state can never be pushed there."""
+    u = origin_url(root).rstrip("/").removesuffix(".git")
+    return any(m in u for m in UPSTREAM_MARKERS)
+
+
 def current_branch(root: Path) -> str:
     r = git(root, "rev-parse", "--abbrev-ref", "HEAD")
     return r.stdout.strip() if r.returncode == 0 else "main"
@@ -376,6 +391,7 @@ def do_sync(root: Path, message=None, also=(), push=True, light=False, quiet=Fal
         if not has_origin(root):
             say("sync: no origin remote — committed locally only.")
             return True
+        upstream = origin_is_upstream(root)
         if git(root, "fetch", "origin", "--prune").returncode != 0:
             say("sync: fetch failed (offline?) — work is committed locally; retry later.")
             return False
@@ -393,6 +409,10 @@ def do_sync(root: Path, message=None, also=(), push=True, light=False, quiet=Fal
                     "another agent's in-flight work stays where it lies. Re-run when clear.", 2)
             say(f"✓ merged origin/{target}")
         # 3. push
+        if upstream:
+            say("sync: origin is the public SpineOS repo — pulled product updates, NOT pushing your state there.")
+            say("      your work is committed locally. Give the spine its own remote: python3 spine.py remote <git-url>")
+            return True
         if light or not push:
             return True
         ref = f"HEAD:refs/heads/member/{re.sub(r'[^A-Za-z0-9_.-]', '_', get_author(None, root))}" \
@@ -414,9 +434,11 @@ def do_sync(root: Path, message=None, also=(), push=True, light=False, quiet=Fal
                     git(root, "merge", "--abort")
                     die("sync: conflict during push retry — resolve with a human.", 2)
         say("sync: push failed — work is committed locally.")
-        for line in last_err.splitlines():
-            if "REFUSED" in line or "rejected" in line:
-                say("  server: " + line.replace("remote: ", "").strip())
+        shown = [l for l in last_err.splitlines() if "REFUSED" in l or "rejected" in l]
+        if not shown:
+            shown = [l for l in last_err.splitlines() if l.strip()][-3:]
+        for line in shown:
+            say("  git: " + line.replace("remote: ", "").strip())
         return False
 
 
@@ -438,13 +460,15 @@ def maybe_autosync(root: Path):
 
 def cmd_init(args):
     root = Path.cwd()
-    if (root / "SPINE.md").is_file():
-        die("SPINE.md already exists here; this is already a spine.")
-    src = Path(__file__).resolve().parent / "SPINE.md"
-    if src.is_file():
-        (root / "SPINE.md").write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+    adopting = (root / "SPINE.md").is_file()
+    if adopting:
+        print("adopting: SPINE.md already exists here (a clone or an existing spine) — completing the scaffold, leaving your rules untouched")
     else:
-        (root / "SPINE.md").write_text("# SPINE — operating rules\n\n(write your rules here)\n", encoding="utf-8")
+        src = Path(__file__).resolve().parent / "SPINE.md"
+        if src.is_file():
+            (root / "SPINE.md").write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        else:
+            (root / "SPINE.md").write_text("# SPINE — operating rules\n\n(write your rules here)\n", encoding="utf-8")
     (root / "cases").mkdir(exist_ok=True)
     ga = root / ".gitattributes"
     if not ga.is_file() or "merge=union" not in ga.read_text():
@@ -456,17 +480,22 @@ def cmd_init(args):
         with open(gi, "a", encoding="utf-8") as f:
             f.write(".spine/\n")
     operator = args.operator or os.environ.get("SPINE_OPERATOR") or ""
-    (root / ".spineos.json").write_text(json.dumps({
-        "branch_mode": args.branch_mode,
-        "main_branch": "main",
-        "created": now_iso(),
-    }, indent=2) + "\n", encoding="utf-8")
-    (root / ".spine" / "config.json").write_text(json.dumps({
-        "operator": operator,
-    }, indent=2), encoding="utf-8")
+    if not (root / ".spineos.json").is_file():
+        (root / ".spineos.json").write_text(json.dumps({
+            "branch_mode": args.branch_mode,
+            "main_branch": current_branch(root) if has_git(root) else "main",
+            "created": now_iso(),
+        }, indent=2) + "\n", encoding="utf-8")
+    cfgp = root / ".spine" / "config.json"
+    if operator or not cfgp.is_file():
+        cfgp.write_text(json.dumps({"operator": operator}, indent=2), encoding="utf-8")
     for f in ("SPINE.md", ".gitattributes", ".gitignore", ".spineos.json"):
         manifest_add(root, root / f)
-    print(f"✓ spine initialised at {root}")
+    print(f"✓ spine {'adopted' if adopting else 'initialised'} at {root}")
+    if has_git(root) and origin_is_upstream(root):
+        print("  ⚠ origin is the public SpineOS repo: you can pull updates from it, but your state can")
+        print("    never be pushed there. Give your spine its own private remote when you have one:")
+        print("    python3 spine.py remote <git-url>   (origin becomes yours; the product repo becomes 'upstream')")
     print(f"  operator: {operator or '(unset — set SPINE_OPERATOR or edit .spine/config.json)'}")
     print(f"  branch mode: {args.branch_mode}"
           + (" (push member/<name>, pull main; admin runs 'spine.py reconcile' to advance main)"
@@ -896,7 +925,9 @@ def cmd_seed(args):
         print("  2. Ask what they run here (clients? matters? projects? patients?) — that is their 'case'.")
         print("  3. Ask about their team: solo → branch mode 'shared' is already right; a team wanting")
         print("     per-member branches sets branch_mode 'member' in .spine/config.json (see docs).")
-        print("  4. Offer to connect a private git remote for durability (their server or a private repo).")
+        print("  4. Offer to connect a private git remote for durability (their server or a private repo):")
+        print("     python3 spine.py remote <git-url>   — a fresh clone's origin is the public product repo,")
+        print("     which pulls updates but can never hold their state; 'remote' fixes that in one step.")
         print("  5. Open their first case: python3 spine.py new '<their first real case>' — then show them")
         print("     the loop: promise → append → worklist → sitrep. Small, real, today's work.")
         print("  Ask ONE question at a time. Do not dump this list on them.")
@@ -969,6 +1000,28 @@ def cmd_reconcile(args):
             print(f"⚠ PARKED {b}: prose conflict in:\n    {conf or '(unknown)'}\n"
                   f"  Resolve with a human, then re-run reconcile. Nothing was lost.")
         sys.exit(2 if parked else 0)
+
+
+def cmd_remote(args):
+    """Point the spine at its own remote. If origin is the public product repo, keep it as
+    'upstream' (for product updates) and make the new URL 'origin' (for the spine's state)."""
+    root = find_root()
+    if not has_git(root):
+        die("remote needs git (run: git init)")
+    if has_origin(root):
+        if origin_is_upstream(root):
+            if git(root, "remote", "get-url", "upstream").returncode != 0:
+                git(root, "remote", "rename", "origin", "upstream", check=True)
+                print("✓ public SpineOS repo kept as 'upstream' (pull product updates with: git pull upstream <branch>)")
+            else:
+                git(root, "remote", "remove", "origin")
+            git(root, "remote", "add", "origin", args.url, check=True)
+        else:
+            git(root, "remote", "set-url", "origin", args.url, check=True)
+    else:
+        git(root, "remote", "add", "origin", args.url, check=True)
+    print(f"✓ origin → {args.url}")
+    print("  next: python3 spine.py sync   (first push creates the branch on your remote)")
 
 
 def cmd_snapshot(args):
@@ -1084,6 +1137,10 @@ def main(argv=None):
     p = sub.add_parser("reconcile", help="ADMIN, MANUAL: merge all origin/member/* into main and push")
     p.add_argument("--no-push", action="store_true")
     p.set_defaults(fn=cmd_reconcile)
+
+    p = sub.add_parser("remote", help="give the spine its own git remote (keeps the public product repo as 'upstream')")
+    p.add_argument("url")
+    p.set_defaults(fn=cmd_remote)
 
     p = sub.add_parser("snapshot", help="pin the current state as a tag (snap/<ts>-<operator>[-label])")
     p.add_argument("label", nargs="?")

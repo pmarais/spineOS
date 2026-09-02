@@ -19,7 +19,7 @@ git clone https://github.com/pmarais/spineOS myspine && cd myspine
 
 > **`/seed`**  (Claude Code) · or just say **"seed"** in any other CLI
 
-The agent boots from the spine and, on a fresh clone, **sets you up in conversation**: your name (for attribution), what a "case" is in your world (clients? matters? projects?), an optional private remote for durability, and your first real case. From then on every session starts with `seed` and runs `worklist → case → append → sitrep`. Per-CLI guides: [docs/adoption/](docs/adoption/README.md). Full walkthrough: [docs/quickstart.md](docs/quickstart.md).
+The agent boots from the spine and, on a fresh clone, **sets you up in conversation**: your name (for attribution), what a "case" is in your world (clients? matters? projects?), an optional private remote for durability, and your first real case. From then on every session starts with `seed` and runs `worklist → case → append → sitrep`. Your clone's `origin` is this public repo: product updates pull from it, but your state can never be pushed to it, so when you have a private remote run `python3 spine.py remote <git-url>` (this repo stays as `upstream`). Per-CLI guides: [docs/adoption/](docs/adoption/README.md). Full walkthrough: [docs/quickstart.md](docs/quickstart.md).
 
 Prefer the raw CLI?
 

@@ -8,7 +8,7 @@ SpineOS runs inside the agent CLI you already subscribe to: **Claude Code, Grok 
 git clone <this-repo> myspine && cd myspine
 ```
 
-Your clone IS your spine. Your cases will live in `cases/`, your rules in `SPINE.md`. Commit it to your own private remote; the spine is designed to be owned.
+Your clone IS your spine. Your cases will live in `cases/`, your rules in `SPINE.md`. The clone's `origin` is the public product repo: you pull updates from it, but your state can never be pushed there. The moment you have a private remote (your server, a private GitHub/GitLab repo), run `python3 spine.py remote <git-url>`; the product repo stays attached as `upstream`. Until then the spine works local-only and `sync` commits locally.
 
 ## 2. Set your operator identity (once per person per machine)
 

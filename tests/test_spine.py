@@ -233,5 +233,60 @@ class TestSyncPipeline(unittest.TestCase):
         self.assertGreaterEqual(fb["state"]["_n_lines"], 3)
 
 
+class TestInstallPath(unittest.TestCase):
+    """The stranger's path: clone the product repo, adopt, sync, then give it its own remote."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.base = Path(self.tmp.name)
+        self.env = {**os.environ, "SPINE_OPERATOR": "stranger", "SPINE_SESSION": "s-stranger",
+                    "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+                    "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def sh(self, cwd, *cmd, check=True):
+        r = subprocess.run(list(cmd), cwd=cwd, capture_output=True, text=True, env=self.env)
+        if check and r.returncode != 0:
+            self.fail(f"{' '.join(cmd)} failed:\n{r.stderr}\n{r.stdout}")
+        return r
+
+    def test_clone_adopt_sync_remote(self):
+        # a "product repo" whose remote URL matches the upstream marker
+        product = self.base / "github.com" / "pmarais" / "spineOS"
+        product.mkdir(parents=True)
+        self.sh(product, "git", "init", "-q", "-b", "main")
+        (product / "SPINE.md").write_text("# rules\n")
+        (product / "spine.py").write_text(Path(SP).read_text())
+        (product / "cases").mkdir(); (product / "cases" / ".gitkeep").touch()
+        self.sh(product, "git", "add", "-A"); self.sh(product, "git", "commit", "-q", "-m", "product")
+        clone = self.base / "myspine"
+        self.sh(self.base, "git", "clone", "-q", str(product), str(clone))
+        # adopt: init must NOT refuse, must complete the scaffold, must warn about upstream
+        r = self.sh(clone, sys.executable, "spine.py", "init", "--operator", "stranger")
+        self.assertIn("adopted", r.stdout)
+        self.assertIn("public SpineOS repo", r.stdout)
+        self.assertTrue((clone / ".spineos.json").is_file())
+        self.assertEqual(json.loads((clone / ".spineos.json").read_text())["main_branch"], "main")
+        self.assertEqual((clone / "SPINE.md").read_text(), "# rules\n")   # untouched
+        # work + sync: must commit locally and refuse to push to upstream, saying so
+        self.sh(clone, sys.executable, "spine.py", "new", "First client")
+        r = self.sh(clone, sys.executable, "spine.py", "sync")
+        self.assertIn("NOT pushing", r.stdout)
+        self.assertEqual(self.sh(product, "git", "rev-list", "--count", "main").stdout.strip(), "1")
+        # remote: product repo becomes upstream, new origin takes the state
+        own = self.base / "own.git"
+        self.sh(self.base, "git", "init", "-q", "--bare", "-b", "main", str(own))
+        r = self.sh(clone, sys.executable, "spine.py", "remote", str(own))
+        self.assertIn("upstream", r.stdout)
+        remotes = self.sh(clone, "git", "remote", "-v").stdout
+        self.assertIn("upstream", remotes); self.assertIn(str(own), remotes)
+        r = self.sh(clone, sys.executable, "spine.py", "sync")
+        self.assertIn("pushed", r.stdout)
+        self.assertEqual(self.sh(own, "git", "rev-list", "--count", "main").stdout.strip(),
+                         self.sh(clone, "git", "rev-list", "--count", "main").stdout.strip())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
